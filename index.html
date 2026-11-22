@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b12">
+<title>CART3R FILE HUB</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{color-scheme:dark;--bg:#090b12;--panel:#121725;--line:#273149;--muted:#98a4ba;--text:#f4f7ff;--blue:#6c8cff;--cyan:#49d6d0;--red:#ff657d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,#18264a 0,transparent 42%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,sans-serif;min-height:100vh}
+.wrap{width:min(760px,100%);margin:auto;padding:22px 16px 50px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 24px}.brand{font-weight:900;letter-spacing:1.5px;font-size:20px}.brand span{color:var(--cyan)}.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:6px 9px;border-radius:99px}
+h1{font-size:clamp(27px,7vw,38px);line-height:1.1;margin:0 0 9px}p{color:var(--muted);line-height:1.55}.panel{background:linear-gradient(145deg,#151d2e,#101522);border:1px solid var(--line);border-radius:20px;padding:18px;margin:16px 0;box-shadow:0 16px 45px #0005}
+label{display:block;color:#cbd5e7;font-size:13px;margin:12px 0 7px}input{width:100%;background:#090e19;border:1px solid #303b53;border-radius:12px;padding:13px;color:white;font:inherit;outline:none}input:focus{border-color:var(--blue)}
+button{border:0;border-radius:12px;padding:13px 16px;font-weight:800;font-size:14px;color:#08101b;background:linear-gradient(100deg,var(--cyan),#83a1ff);cursor:pointer}button.secondary{background:#202b40;color:#e6edff;border:1px solid #35425c}button.danger{background:#3b1d2a;color:#ffb8c4;border:1px solid #713348}button:disabled{opacity:.5;cursor:wait}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.hidden{display:none!important}.status{font-size:13px;color:var(--muted);min-height:20px;margin-top:10px}.drop{border:1.5px dashed #455675;background:#0c1321;border-radius:16px;padding:22px;text-align:center;margin:12px 0}.drop strong{display:block;margin-bottom:5px}.files{display:grid;gap:10px}.file{display:flex;gap:12px;align-items:center;background:#0c1220;border:1px solid #27334a;border-radius:14px;padding:12px}.ico{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#1c2941;font-size:20px;flex-shrink:0}.meta{min-width:0;flex:1}.fname{font-weight:750;overflow-wrap:anywhere}.sub{font-size:12px;color:var(--muted);margin-top:4px}.actions{display:flex;gap:7px;flex-shrink:0}.actions button{padding:9px 11px}.small{font-size:12px;color:var(--muted)}.empty{text-align:center;padding:26px;color:var(--muted)}.foot{text-align:center;color:#66738b;font-size:11px;margin-top:25px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="brand">CART3R<span>.</span> FILE HUB</div><div class="tag">PERSONAL DOWNLOAD CENTER</div></div>
+  <h1>พื้นที่ฝากไฟล์<br><span style="color:var(--cyan)">ของคุณ</span></h1>
+  <p>อัปโหลดไฟล์ไว้ที่นี่ แล้วเปิดลิงก์จากมือถือหรืออุปกรณ์อื่นเพื่อดาวน์โหลดได้</p>
+
+  <section class="panel" id="adminPanel">
+    <div class="row" style="justify-content:space-between"><div><h3 style="margin:0">โหมดผู้ดูแล</h3><div class="small" id="adminHint">เข้าสู่ระบบเพื่ออัปโหลดและจัดการไฟล์</div></div><button class="secondary" id="logoutBtn" style="display:none">ออกจากระบบ</button></div>
+    <div id="loginFields">
+      <label>อีเมล</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com">
+      <label>รหัสผ่าน</label><input id="password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน">
+      <div style="margin-top:14px"><button id="loginBtn" style="width:100%">เข้าสู่ระบบผู้ดูแล</button></div>
+      <div class="status" id="loginStatus"></div>
+    </div>
+    <div id="uploadArea" class="hidden">
+      <div class="drop"><strong>📁 เลือกไฟล์ที่ต้องการอัปโหลด</strong><div class="small">รองรับไฟล์ทั่วไป • สูงสุด 50 MB</div><input id="fileInput" type="file" style="margin-top:14px"></div>
+      <button id="uploadBtn" style="width:100%">อัปโหลดไฟล์</button>
+      <div class="status" id="uploadStatus"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="appPanel">
+    <div style="height:1px;background:var(--line);margin:4px 0 18px"></div>
+    <div class="row"><h3 style="margin:0;flex:1">ไฟล์ทั้งหมด</h3><button class="secondary" id="refreshBtn">รีเฟรช</button></div>
+    <div class="small" style="margin:7px 0 12px">ไฟล์ในรายการนี้เปิดดาวน์โหลดได้จากทุกอุปกรณ์ที่มีลิงก์</div>
+    <div class="files" id="files"><div class="empty">กำลังโหลดรายการ...</div></div>
+  </section>
+  <div class="foot">CART3R FILE HUB • PRIVATE ADMIN / PUBLIC DOWNLOAD LINKS</div>
+</div>
+<script>
+const SUPABASE_URL = "https://dqkalvyjuprkyqhjdknr.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_gSBJZ2rWGnPX3IBujt2zlQ__G11dwn8";
+const BUCKET = "cart3r-downloads";
+const OWNER_UID = "dbe542f1-dbe7-460a-9aac-bb8ea10660c0";
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+let isOwner = false;
+const human = n => {if(!Number.isFinite(n))return "";const u=["B","KB","MB","GB"];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return `${n.toFixed(i?1:0)} ${u[i]}`};
+const safeName = n => n.replace(/[^\p{L}\p{N}._() -]/gu,"_").slice(0,150) || "file";
+function status(id,msg){$(id).textContent=msg}
+async function syncUI(){const {data:{session}}=await client.auth.getSession();const owner=!!session&&session.user.id===OWNER_UID;isOwner=owner;$("loginFields").classList.toggle("hidden",owner);$("uploadArea").classList.toggle("hidden",!owner);$("logoutBtn").style.display=owner?"block":"none";$("adminHint").textContent=owner?"คุณเข้าสู่ระบบผู้ดูแลแล้ว":"ทุกคนสามารถดูและดาวน์โหลดไฟล์ได้ โดยการอัปโหลดต้องเข้าสู่ระบบผู้ดูแล";if(session&&!owner){await client.auth.signOut()}loadFiles()}
+$("loginBtn").onclick=async()=>{status("loginStatus","กำลังเข้าสู่ระบบ...");const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){status("loginStatus",error.message);return}const {data:{user}}=await client.auth.getUser();if(user.id!==OWNER_UID){await client.auth.signOut();status("loginStatus","บัญชีนี้ไม่มีสิทธิ์เป็นผู้ดูแล");return}status("loginStatus","เข้าสู่ระบบสำเร็จ");syncUI()};
+$("logoutBtn").onclick=async()=>{await client.auth.signOut();syncUI()};
+$("refreshBtn").onclick=loadFiles;
+$("uploadBtn").onclick=async()=>{const f=$("fileInput").files[0];if(!f){status("uploadStatus","กรุณาเลือกไฟล์ก่อน");return}const {data:{user}}=await client.auth.getUser();if(!user||user.id!==OWNER_UID){status("uploadStatus","บัญชีนี้ไม่มีสิทธิ์อัปโหลด");return}
+const name=`${Date.now()}_${safeName(f.name)}`;$("uploadBtn").disabled=true;status("uploadStatus","กำลังอัปโหลด...");
+const {error}=await client.storage.from(BUCKET).upload(name,f,{contentType:f.type||"application/octet-stream",upsert:false});
+$("uploadBtn").disabled=false;if(error){status("uploadStatus","อัปโหลดไม่สำเร็จ: "+error.message);return}
+status("uploadStatus","อัปโหลดสำเร็จ ✓");$("fileInput").value="";loadFiles()};
+async function loadFiles(){const box=$("files");box.innerHTML='<div class="empty">กำลังโหลด...</div>';const {data,error}=await client.storage.from(BUCKET).list("",{limit:200,sortBy:{column:"created_at",order:"desc"}});
+if(error){box.textContent="โหลดรายการไม่สำเร็จ: "+error.message;return}const items=(data||[]).filter(x=>x.name&&!x.name.startsWith("."));
+if(!items.length){box.innerHTML='<div class="empty">ยังไม่มีไฟล์ — อัปโหลดไฟล์แรกได้เลย</div>';return}
+box.innerHTML="";for(const f of items){const path=f.name;const {data:u}=client.storage.from(BUCKET).getPublicUrl(path);const size=human(Number(f.metadata?.size));const el=document.createElement("div");el.className="file";const ico=document.createElement("div");ico.className="ico";ico.textContent=(f.metadata?.mimetype||"").startsWith("image/")?"🖼️":"📄";const meta=document.createElement("div");meta.className="meta";const nm=document.createElement("div");nm.className="fname";nm.textContent=path.replace(/^\d+_/,"");const sub=document.createElement("div");sub.className="sub";sub.textContent=size||"ไฟล์";meta.append(nm,sub);const acts=document.createElement("div");acts.className="actions";const dl=document.createElement("button");dl.textContent="ดาวน์โหลด";dl.onclick=()=>{const a=document.createElement("a");a.href=u.publicUrl;a.download=path;a.target="_blank";document.body.append(a);a.click();a.remove()};acts.append(dl);
+if(isOwner){const del=document.createElement("button");del.className="danger";del.textContent="ลบ";del.onclick=async()=>{if(!confirm("ยืนยันลบไฟล์นี้?"))return;const {error:e}=await client.storage.from(BUCKET).remove([path]);if(e)alert(e.message);else loadFiles()};acts.append(del)}el.append(ico,meta,acts);box.append(el)}}
+client.auth.onAuthStateChange(()=>syncUI());syncUI();
+</script>
+</body>
+</html>
